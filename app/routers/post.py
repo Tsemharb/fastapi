@@ -3,6 +3,7 @@ from fastapi import Response, status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
 from ..database import get_db
 from typing import List, Optional
+from sqlalchemy import func
 
 router = APIRouter(
     prefix="/posts",
@@ -10,10 +11,16 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=List[schemas.PostResponse])
+@router.get("/", response_model=List[schemas.PostOut])
 def get_posts(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, search: Optional[str] = ""):
-    posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(
-        skip).all()  # db.query(models.Post).filter(models.Post.id == current_user.id).all()
+    # posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+
+    posts = db.query(models.Post, func.count(models.Vote.post_id).label("votes")). \
+        join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True) \
+        .group_by(models.Post.id) \
+        .filter(models.Post.title.contains(search)) \
+        .limit(limit) \
+        .offset(skip).all()
     return posts
 
 
@@ -27,9 +34,11 @@ def create_post(post: schemas.PostCreate, db: Session = Depends(get_db),
     return new_post
 
 
-@router.get("/{id}", response_model=schemas.PostResponse)
+@router.get("/{id}", response_model=schemas.PostOut)
 def get_post(id: int, db: Session = Depends(get_db)):
-    post = db.query(models.Post).filter(models.Post.id == id).first()
+    post = db.query(models.Post, func.count(models.Vote.post_id).label("votes")). \
+        join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True) \
+        .group_by(models.Post.id).filter(models.Post.id == id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with id: {id} was not found")
