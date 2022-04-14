@@ -13,16 +13,6 @@ class PostCreate(PostBase):
     pass
 
 
-class PostResponse(PostBase):
-    class Config:
-        orm_mode = True
-
-
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str
-
-
 class UserResponse(BaseModel):
     id: int
     email: EmailStr
@@ -30,6 +20,19 @@ class UserResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class PostResponse(PostBase):
+    owner_id: int
+    owner: UserResponse
+
+    class Config:
+        orm_mode = True
+
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
 
 
 class UserLogin(BaseModel):
