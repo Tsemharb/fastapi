@@ -3,7 +3,7 @@ from . import models
 from .database import engine
 from .routers import post, user, auth, vote
 
-models.Base.metadata.create_all(bind=engine)  # creates tables if absent
+# models.Base.metadata.create_all(bind=engine)  # creates tables if absent
 
 app = FastAPI()
 
